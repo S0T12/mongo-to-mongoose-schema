@@ -1,0 +1,35 @@
+{
+  "name": "mongo-to-mongoose-schema",
+  "version": "1.0.0",
+  "description": "A TypeScript package that generates Nest.js/Mongoose schemas from existing MongoDB collections.",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
+  "files": [
+    "dist/**/*"
+  ],
+  "scripts": {
+    "build": "tsc",
+    "prepublishOnly": "npm run build"
+  },
+  "keywords": [
+    "mongodb",
+    "mongoose",
+    "nest.js",
+    "schema",
+    "codegen",
+    "typescript"
+  ],
+  "author": "S0T12",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/S0T12/mongo-to-mongoose-schema.git"
+  },
+  "dependencies": {
+    "mongoose": "^6.8.3"
+  },
+  "devDependencies": {
+    "@types/mongoose": "^5.11.97",
+    "typescript": "^4.9.4"
+  }
+}
