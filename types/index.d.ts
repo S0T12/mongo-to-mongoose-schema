@@ -1,1 +1,0 @@
-export declare function generateMongooseSchemas(databaseUri: string, outputDir: string): Promise<void>;
