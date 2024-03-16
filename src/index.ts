@@ -6,6 +6,6 @@ import { generateSchemas } from './schemaGenerator';
  * @param databaseUri The MongoDB connection URI.
  * @param outputDir The output directory where the schema files will be generated.
  */
-export function generateMongooseSchemas(databaseUri: string, outputDir: string) {
-  generateSchemas(databaseUri, outputDir);
+export async function generateMongooseSchemas(databaseUri: string, outputDir: string): Promise<void> {
+  await generateSchemas(databaseUri, outputDir);
 }
