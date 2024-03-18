@@ -1,7 +1,8 @@
-import { Schema, SchemaDefinitionProperty, SchemaTypes, Types } from 'mongoose';
+import { Schema, SchemaDefinitionProperty, Types } from 'mongoose';
 import fs from 'fs';
 
-const MAX_DEPTH = 5; // Adjust this value as needed
+const MAX_DEPTH = 5;
+
 
 /**
  * Generates a Mongoose schema definition from a sample document.
@@ -12,53 +13,55 @@ const MAX_DEPTH = 5; // Adjust this value as needed
  * @returns The inferred schema definition.
  */
 export function generateSchemaFromSampleDoc(doc: any, depth = 0, visited: any[] = []): SchemaDefinitionProperty {
-  // Handle Mongoose document objects
   if (doc && doc._doc) {
     doc = doc._doc;
   }
 
   const schema: Record<string, any> = {};
 
-  // Check if the depth limit is reached or if the object has been visited before
   if (depth > MAX_DEPTH || visited.includes(doc)) {
-    return { type: Schema.Types.Mixed };
+    return Schema.Types.Mixed;
   }
 
-  visited.push(doc); // Add the current object to the visited list
+  visited.push(doc);
 
   if (Array.isArray(doc)) {
-    // Handle arrays
+    if (doc.length === 0) {
+      return [Schema.Types.Mixed];
+    }
     const arrayType = generateSchemaFromSampleDoc(doc[0], depth + 1, visited);
     return [arrayType];
   } else if (typeof doc === 'object' && doc !== null) {
-    // Handle objects
     for (const key in doc) {
-      const value = doc[key];
-      schema[key] = generateSchemaFromSampleDoc(value, depth + 1, visited);
+      if (Object.prototype.hasOwnProperty.call(doc, key)) {
+        if (key === '_id') {
+          continue;
+        }
+        const value = doc[key];
+        schema[key] = generateSchemaFromSampleDoc(value, depth + 1, visited);
+      }
     }
   } else {
-    // Handle primitive types
+    console.log('doc type: ', typeof doc, ' doc', doc);
     switch (typeof doc) {
       case 'string':
-        return { type: String };
+        return String;
       case 'number':
-        return { type: Number };
+        return Number;
       case 'boolean':
-        return { type: Boolean };
+        return Boolean;
       case 'object':
         if (doc === null) {
-          return { type: Schema.Types.Mixed, required: false };
+          return Schema.Types.Mixed;
         } else if (doc instanceof Date) {
-          return { type: Date };
-        } else if (typeof doc === 'object' && doc._bsontype === 'ObjectID') {
-          return { type: Schema.Types.ObjectId };
+          return Date;
+        } else if (Types.ObjectId.isValid(doc)) {
+          return Schema.Types.ObjectId;
         } else {
-          // Unsupported data type
-          return { type: Schema.Types.Mixed };
+          return Object;
         }
       default:
-        // Unsupported data type
-        return { type: Schema.Types.Mixed };
+        return Schema.Types.Mixed;
     }
   }
 
@@ -75,15 +78,13 @@ export function generateSchemaFromSampleDoc(doc: any, depth = 0, visited: any[] 
  */
 export function generateSchemaFile(collectionName: string, schema: SchemaDefinitionProperty, filePath: string, databaseName: string) {
   const fileContent = `import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { SchemaTypes, Types } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 @Schema({ collection: '${collectionName}' })
-export class ${collectionName.charAt(0).toUpperCase() + collectionName.slice(1)} {
+export class ${collectionName.charAt(0).toUpperCase() + collectionName.slice(1)} extends Document {
 ${Object.entries(schema)
-    .map(
-      ([key]) => `  @Prop()
-  ${key}: any;`
-    )
+    .map(([key, value]) => `  @Prop()
+  ${key}: ${getType(value)};`)
     .join('\n\n')}
 }
 
@@ -91,4 +92,39 @@ export const ${collectionName}Schema = SchemaFactory.createForClass(${collection
 `;
 
   fs.writeFileSync(filePath, fileContent, 'utf-8');
+}
+
+function getType(value: any): string {
+  if (Array.isArray(value)) {
+    return `[${getType(value[0])}]`;
+  } else if (value === String || value === Number || value === Boolean) {
+    return value.name;
+  } else if (value === Date) {
+    return 'Date';
+  } else if (value === Schema.Types.ObjectId) {
+    return 'Types.ObjectId';
+  } else if (value instanceof Types.ObjectId) {
+    return 'Types.ObjectId';
+  } else if (typeof value === 'object' && !Array.isArray(value)) {
+    const entries = Object.entries(value);
+    console.log('entries: ', entries);
+    
+    if (entries.length === 0) {
+      return 'Object';
+    } else {
+      let isObjectId = true;
+      const typeString = '{ ' + entries
+        .map(([key, subValue]) => {
+          const subType = getType(subValue);
+          if (subType !== 'Types.ObjectId') {
+            isObjectId = false;
+          }
+          return `${key}: ${subType};`;
+        })
+        .join(' ') + ' }';
+      return isObjectId ? 'Types.ObjectId' : typeString;
+    }
+  } else {
+    return 'any';
+  }
 }
