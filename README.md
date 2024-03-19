@@ -5,7 +5,7 @@ A TypeScript package that generates Nest.js/Mongoose schemas from existing Mongo
 ## Installation
 
 ```bash
-npm install 
+npm install mongo-to-mongoose-schema
 ```
 
 ## Usage
@@ -33,18 +33,38 @@ The generated schema file will have the following structure:
 
 ```typescript
 import { Prop, Schema, SchemaFactory } from '@nestjs/mongoose';
-import { SchemaTypes, Types } from 'mongoose';
+import { Document, Types } from 'mongoose';
 
 @Schema({ collection: 'your_collection_name' })
-export class YourCollectionName {
+export class YourCollectionName extends Document {
   @Prop()
-  propertyName: any;
+  stringProperty: string;
+
+  @Prop()
+  numberProperty: number;
+
+  @Prop()
+  booleanProperty: boolean;
+
+  @Prop()
+  dateProperty: Date;
+
+  @Prop()
+  objectIdProperty: Types.ObjectId;
+
+  @Prop()
+  arrayProperty: [{ nestedProperty: string }];
+
+  @Prop()
+  nestedObjectProperty: { nestedProperty: string };
 
   // ... other properties
 }
 
 export const YourCollectionNameSchema = SchemaFactory.createForClass(YourCollectionName);
 ```
+
+The package infers the appropriate types for properties based on the sample document's data. It supports common types like `string`, `number`, `boolean`, `Date`, `Types.ObjectId`, arrays, and nested objects up to a maximum depth of 5 levels.
 
 You can then import and use the generated schema in your Nest.js application.
 
@@ -59,7 +79,6 @@ The `generateMongooseSchemas` function accepts two arguments:
 
 - The package generates schemas based on a single sample document from each collection. If the documents in a collection have varying structures, the generated schema may not accurately represent all possible data shapes.
 - Nested objects and arrays are supported up to a maximum depth of 5 levels to avoid potential circular references. This depth can be adjusted in the `utils.ts` file by modifying the `MAX_DEPTH` constant.
-- The package currently generates schemas with `any` types for properties. You may need to manually adjust the schemas to specify the correct types based on your application requirements.
 
 ## Contributing
 
