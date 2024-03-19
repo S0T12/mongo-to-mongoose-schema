@@ -1,6 +1,6 @@
 {
   "name": "mongo-to-mongoose-schema",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "A TypeScript package that generates Nest.js/Mongoose schemas from existing MongoDB collections.",
   "main": "./dist/index.js",
   "types": "dist/index.d.ts",
